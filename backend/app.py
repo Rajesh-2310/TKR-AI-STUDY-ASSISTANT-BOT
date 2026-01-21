@@ -630,32 +630,33 @@ def delete_syllabus(syllabus_id):
     try:
         db = get_db()
         
-        # Get syllabus file path
+        # Check if syllabus exists
         syllabus = db.execute_query(
-            "SELECT file_path FROM syllabus WHERE id = %s",
+            "SELECT id FROM syllabus WHERE id = %s",
             (syllabus_id,)
         )
         
-        if not syllabus:
+        if not syllabus or len(syllabus) == 0:
             return jsonify({'success': False, 'error': 'Syllabus not found'}), 404
         
-        # Delete file if exists
-        file_path = syllabus[0]['file_path']
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
-        # Delete from database
-        db.execute_query(
-            "DELETE FROM syllabus WHERE id = %s",
-            (syllabus_id,),
-            fetch=False
-        )
+        # Delete from database (syllabus is text-only, no files to delete)
+        try:
+            db.execute_query(
+                "DELETE FROM syllabus WHERE id = %s",
+                (syllabus_id,),
+                fetch=False
+            )
+        except Exception as db_error:
+            logger.error(f"Database error deleting syllabus {syllabus_id}: {db_error}")
+            return jsonify({'success': False, 'error': f'Database error: {str(db_error)}'}), 500
         
         logger.info(f"Syllabus {syllabus_id} deleted by admin {request.admin_email}")
         return jsonify({'success': True, 'message': 'Syllabus deleted successfully'}), 200
         
     except Exception as e:
         logger.error(f"Error deleting syllabus: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

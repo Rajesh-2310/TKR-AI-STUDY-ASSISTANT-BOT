@@ -453,8 +453,21 @@ function displaySyllabus(syllabusItems) {
         const unitDiv = document.createElement('div');
         unitDiv.className = 'syllabus-unit';
 
+        const deleteButton = isAdmin ? `
+            <button class="btn btn-danger btn-sm" onclick="deleteSyllabus(${item.id}, '${escapeHtml(item.unit_name).replace(/'/g, "\\'")}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete
+            </button>
+        ` : '';
+
         unitDiv.innerHTML = `
-            <h3>Unit ${item.unit_number}: ${escapeHtml(item.unit_name)}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Unit ${item.unit_number}: ${escapeHtml(item.unit_name)}</h3>
+                ${deleteButton}
+            </div>
             <h4>Topics:</h4>
             <p>${escapeHtml(item.topics)}</p>
             ${item.learning_outcomes ? `
