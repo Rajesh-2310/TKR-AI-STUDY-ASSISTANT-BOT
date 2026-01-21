@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TKR College - AI Study Assistant</title>
+    <meta name="description"
+        content="TKR College of Engineering and Technology AI-powered study assistant for materials, syllabus, and question answering">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">TKR</div>
+                <div class="logo-text">
+                    <h1>TKR College AI Assistant</h1>
+                    <p>Engineering & Technology</p>
+                </div>
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="chat">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Chat
+                </button>
+                <button class="nav-tab" data-tab="materials">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Materials
+                </button>
+                <button class="nav-tab" data-tab="syllabus">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    Syllabus
+                </button>
+                <button class="nav-tab" data-tab="questions">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Questions
+                </button>
+                <button class="nav-tab" data-tab="upload" id="upload-tab-btn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload
+                </button>
+            </nav>
+            <div class="admin-controls">
+                <button class="admin-btn" id="admin-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span id="admin-btn-text">Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Chat Tab -->
+        <div class="tab-content active" id="chat-tab">
+            <div class="chat-container">
+                <div class="chat-sidebar">
+                    <h3>Filter by Subject</h3>
+                    <select id="chat-subject-filter" class="subject-select">
+                        <option value="">All Subjects</option>
+                    </select>
+                    <div class="chat-info">
+                        <div class="info-card">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                            </svg>
+                            <p>Ask questions about your study materials, get syllabus information, or request important
+                                questions.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-main">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="welcome-message">
+                            <div class="welcome-icon">🎓</div>
+                            <h2>Welcome to TKR AI Study Assistant!</h2>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>Answering questions from your study materials</li>
+                                <li>Providing syllabus information</li>
+                                <li>Sharing important questions</li>
+                                <li>Finding relevant content in PDFs</li>
+                            </ul>
+                            <p class="welcome-tip">Start by asking a question or uploading study materials!</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <form class="chat-input-form" id="chat-form">
+                            <input type="text" id="chat-input"
+                                placeholder="Ask a question about your study materials..." autocomplete="off">
+                            <button type="submit" class="send-button">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materials Tab -->
+        <div class="tab-content" id="materials-tab">
+            <div class="content-header">
+                <h2>Study Materials</h2>
+                <select id="materials-subject-filter" class="subject-select">
+                    <option value="">All Subjects</option>
+                </select>
+            </div>
+            <div class="materials-grid" id="materials-grid">
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <h3>No materials yet</h3>
+                    <p>Upload PDF materials to get started</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Syllabus Tab -->
+        <div class="tab-content" id="syllabus-tab">
+            <div class="content-header">
+                <h2>Course Syllabus</h2>
+                <select id="syllabus-subject-filter" class="subject-select">
+                    <option value="">Select Subject</option>
+                </select>
+            </div>
+            <div class="syllabus-content" id="syllabus-content">
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <h3>Select a subject</h3>
+                    <p>Choose a subject to view its syllabus</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Questions Tab -->
+        <div class="tab-content" id="questions-tab">
+            <div class="content-header">
+                <h2>Important Questions</h2>
+                <div class="filter-group">
+                    <select id="questions-subject-filter" class="subject-select">
+                        <option value="">All Subjects</option>
+                    </select>
+                    <select id="questions-type-filter" class="type-select">
+                        <option value="">All Types</option>
+                        <option value="short">Short Answer</option>
+                        <option value="long">Long Answer</option>
+                        <option value="numerical">Numerical</option>
+                        <option value="mcq">MCQ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="questions-list" id="questions-list">
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <h3>No questions available</h3>
+                    <p>Important questions will appear here</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Tab -->
+        <div class="tab-content" id="upload-tab">
+            <div class="upload-container">
+                <h2>Upload Content</h2>
+                <p class="upload-description">Add materials, syllabus, or important questions</p>
+
+                <!-- Upload Type Tabs -->
+                <div class="upload-tabs">
+                    <button class="upload-tab-btn active" data-upload-type="material">📄 Materials</button>
+                    <button class="upload-tab-btn" data-upload-type="syllabus">📚 Syllabus</button>
+                    <button class="upload-tab-btn" data-upload-type="question">❓ Questions</button>
+                </div>
+
+                <!-- Material Upload Form -->
+                <div class="upload-form-container active" id="material-upload">
+                    <form id="upload-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="upload-subject">Subject *</label>
+                            <select id="upload-subject" class="subject-select" required>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upload-title">Title *</label>
+                            <input type="text" id="upload-title" placeholder="e.g., Chapter 1 - Introduction" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upload-description">Description</label>
+                            <textarea id="upload-description" placeholder="Brief description of the material"
+                                rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>PDF File *</label>
+                            <div class="file-upload-area" id="file-upload-area">
+                                <input type="file" id="file-input" accept=".pdf" required hidden>
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>Click to upload or drag and drop</p>
+                                <span>PDF files only (Max 50MB)</span>
+                            </div>
+                            <div class="file-info" id="file-info" style="display: none;"></div>
+                        </div>
+
+                        <button type="submit" class="submit-button" id="upload-button">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Material
+                        </button>
+                    </form>
+
+                    <div class="upload-progress" id="upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <p id="progress-text">Uploading...</p>
+                    </div>
+                </div>
+
+                <!-- Syllabus Upload Form -->
+                <div class="upload-form-container" id="syllabus-upload">
+                    <form id="syllabus-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="syllabus-subject">Subject *</label>
+                            <select id="syllabus-subject" class="subject-select" required>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="syllabus-unit-number">Unit Number *</label>
+                            <input type="number" id="syllabus-unit-number" placeholder="e.g., 1" min="1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="syllabus-unit-name">Unit Name *</label>
+                            <input type="text" id="syllabus-unit-name" placeholder="e.g., Introduction to Programming"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="syllabus-topics">Topics *</label>
+                            <textarea id="syllabus-topics" placeholder="List all topics covered in this unit" rows="5"
+                                required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="syllabus-outcomes">Learning Outcomes</label>
+                            <textarea id="syllabus-outcomes" placeholder="Expected learning outcomes (optional)"
+                                rows="3"></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-button">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Add Syllabus Unit
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Question Upload Form -->
+                <div class="upload-form-container" id="question-upload">
+                    <form id="question-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="question-subject">Subject *</label>
+                            <select id="question-subject" class="subject-select" required>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question-unit">Unit Number</label>
+                            <input type="number" id="question-unit" placeholder="e.g., 1" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question-type">Question Type *</label>
+                            <select id="question-type" required>
+                                <option value="short">Short Answer</option>
+                                <option value="long">Long Answer</option>
+                                <option value="numerical">Numerical</option>
+                                <option value="mcq">MCQ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question-difficulty">Difficulty *</label>
+                            <select id="question-difficulty" required>
+                                <option value="easy">Easy</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question-text">Question *</label>
+                            <textarea id="question-text" placeholder="Enter the question" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="question-answer">Answer</label>
+                            <textarea id="question-answer" placeholder="Enter the answer (optional)"
+                                rows="6"></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-button">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Add Question
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Markdown Parser Library -->
+    <script src="marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
