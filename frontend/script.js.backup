@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
     await checkAdminAuth();  // Check admin authentication first
     setupEventListeners();
-    setupHeaderScrollBehavior();  // Add header hide/show on scroll
     await loadSubjects();
     await loadMaterials();
     await loadImportantQuestions();
@@ -94,10 +93,6 @@ function setupEventListeners() {
     });
 
     document.getElementById('questions-type-filter').addEventListener('change', () => {
-        loadImportantQuestions();
-    });
-
-    document.getElementById('questions-unit-filter').addEventListener('change', () => {
         loadImportantQuestions();
     });
 
@@ -193,7 +188,7 @@ function populateSubjectSelects() {
         subjects.forEach(subject => {
             const option = document.createElement('option');
             option.value = subject.id;
-            option.textContent = subject.subject_name;
+            option.textContent = `${subject.subject_code} - ${subject.subject_name}`;
             select.appendChild(option);
         });
 
@@ -490,14 +485,12 @@ async function loadImportantQuestions() {
     try {
         const subjectId = document.getElementById('questions-subject-filter').value;
         const questionType = document.getElementById('questions-type-filter').value;
-        const unitNumber = document.getElementById('questions-unit-filter').value;
 
         let url = `${API_BASE_URL}/important-questions`;
         const params = [];
 
         if (subjectId) params.push(`subject_id=${subjectId}`);
         if (questionType) params.push(`type=${questionType}`);
-        if (unitNumber) params.push(`unit_number=${unitNumber}`);
 
         if (params.length > 0) {
             url += '?' + params.join('&');
@@ -788,33 +781,23 @@ function escapeHtml(text) {
 
 /**
  * Format answer text with proper structure
- * Supports: line breaks, numbered lists, bullet points, code blocks, and section headers
+ * Supports: line breaks, numbered lists, bullet points, and paragraphs
  */
 function formatAnswer(text) {
     if (!text) return '';
 
-    // Split into lines (preserve empty lines for better section detection)
-    const lines = text.split('\n');
+    // Split into lines
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
     let html = '';
     let inOrderedList = false;
     let inUnorderedList = false;
-    let inCodeBlock = false;
-    let codeLines = [];
     let currentParagraph = [];
 
     const flushParagraph = () => {
         if (currentParagraph.length > 0) {
             html += `<p>${escapeHtml(currentParagraph.join(' '))}</p>`;
             currentParagraph = [];
-        }
-    };
-
-    const flushCodeBlock = () => {
-        if (codeLines.length > 0) {
-            html += `<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`;
-            codeLines = [];
-            inCodeBlock = false;
         }
     };
 
@@ -832,74 +815,9 @@ function formatAnswer(text) {
         }
     };
 
-    const isCodeLine = (line) => {
-        // Detect code patterns: import, =, (), {}, [], function calls, etc.
-        return /^(import |from |def |class |function |const |let |var |return |if |for |while |#|\/\/|=.*\(|.*\(.*\).*=|.*\..*\(|.*\[.*\]|.*{.*})/i.test(line.trim()) ||
-            line.includes('import ') ||
-            line.includes(' = ') ||
-            line.includes('()') ||
-            line.includes('pd.') ||
-            line.includes('np.') ||
-            line.includes('sklearn.') ||
-            (line.includes('.') && line.includes('('));
-    };
-
-    const isSectionHeader = (line) => {
-        const trimmed = line.trim();
-        // Section headers: ends with colon, or short capitalized text
-        return (trimmed.endsWith(':') && trimmed.length < 100) ||
-            (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 50 && !isCodeLine(trimmed));
-    };
-
     lines.forEach((line, index) => {
-        const trimmed = line.trim();
-
-        // Skip empty lines but use them to break paragraphs/code blocks
-        if (trimmed.length === 0) {
-            if (inCodeBlock) {
-                // Empty line in code block - keep it
-                codeLines.push('');
-            } else {
-                flushParagraph();
-            }
-            return;
-        }
-
-        // Check if this is a code line
-        if (isCodeLine(trimmed)) {
-            flushParagraph();
-            closeOrderedList();
-            closeUnorderedList();
-
-            if (!inCodeBlock) {
-                inCodeBlock = true;
-            }
-            codeLines.push(trimmed);
-
-            // Check if next line is not code - flush code block
-            const nextLine = lines[index + 1];
-            if (!nextLine || (!isCodeLine(nextLine.trim()) && nextLine.trim().length > 0)) {
-                flushCodeBlock();
-            }
-            return;
-        }
-
-        // Not a code line - flush any pending code block
-        if (inCodeBlock) {
-            flushCodeBlock();
-        }
-
-        // Check for section headers
-        if (isSectionHeader(trimmed)) {
-            flushParagraph();
-            closeOrderedList();
-            closeUnorderedList();
-            html += `<div class="answer-section-header">${escapeHtml(trimmed)}</div>`;
-            return;
-        }
-
         // Check for numbered list (1. 2. 3. etc.)
-        const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+        const numberedMatch = line.match(/^(\d+)\.\s+(.+)$/);
         if (numberedMatch) {
             flushParagraph();
             closeUnorderedList();
@@ -913,7 +831,7 @@ function formatAnswer(text) {
         }
 
         // Check for bullet points (-, *, •)
-        const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+        const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
         if (bulletMatch) {
             flushParagraph();
             closeOrderedList();
@@ -930,17 +848,22 @@ function formatAnswer(text) {
         closeOrderedList();
         closeUnorderedList();
 
-        // Add to current paragraph
-        currentParagraph.push(trimmed);
-
-        // Flush paragraph if this is the last line
-        if (index === lines.length - 1) {
+        // Check if this looks like a heading (all caps, or ends with colon)
+        if (line === line.toUpperCase() && line.length < 100 || line.endsWith(':')) {
             flushParagraph();
+            html += `<strong>${escapeHtml(line)}</strong><br>`;
+        } else {
+            // Add to current paragraph
+            currentParagraph.push(line);
+
+            // Flush paragraph if next line is different type or this is the last line
+            if (index === lines.length - 1) {
+                flushParagraph();
+            }
         }
     });
 
-    // Close any remaining open elements
-    flushCodeBlock();
+    // Close any remaining open lists
     closeOrderedList();
     closeUnorderedList();
     flushParagraph();
@@ -988,22 +911,11 @@ function updateAdminUI(authenticated) {
     const adminBtn = document.getElementById('admin-btn');
     const adminBtnText = document.getElementById('admin-btn-text');
     const uploadTabBtn = document.getElementById('upload-tab-btn');
-    const manageSubjectsTabBtn = document.getElementById('manage-subjects-tab-btn');
 
     if (authenticated) {
         adminBtnText.textContent = 'Logout';
         adminBtn.classList.add('admin-logged-in');
         uploadTabBtn.style.display = 'flex';  // Show upload tab for admins
-        manageSubjectsTabBtn.style.display = 'flex';  // Show manage subjects tab for admins
-
-        // Add event listener for add subject form
-        const addSubjectForm = document.getElementById('add-subject-form');
-        if (addSubjectForm) {
-            addSubjectForm.addEventListener('submit', handleAddSubject);
-        }
-
-        // Load subjects for management
-        loadSubjectsForManagement();
 
         // Reload materials to show delete buttons
         loadMaterials();
@@ -1012,14 +924,7 @@ function updateAdminUI(authenticated) {
         adminBtnText.textContent = 'Admin';
         adminBtn.classList.remove('admin-logged-in');
         uploadTabBtn.style.display = 'none';  // Hide upload tab
-        manageSubjectsTabBtn.style.display = 'none';  // Hide manage subjects tab
-
-        // Reload to hide delete buttons
-        loadMaterials();
-        loadImportantQuestions();
     }
-
-    isAdmin = authenticated;
 }
 
 function handleAdminClick() {
@@ -1160,141 +1065,3 @@ async function deleteQuestion(questionId, questionText) {
         showToast('Delete failed', 'error');
     }
 }
-// Subject Management Functions
-async function loadSubjectsForManagement() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/subjects`);
-        const data = await response.json();
-
-        if (data.success) {
-            displaySubjectsForManagement(data.subjects);
-        }
-    } catch (error) {
-        console.error('Error loading subjects for management:', error);
-        showToast('Failed to load subjects', 'error');
-    }
-}
-
-function displaySubjectsForManagement(subjectsList) {
-    const container = document.getElementById('subjects-list');
-    container.innerHTML = '';
-
-    if (subjectsList.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--gray);">No subjects available</p>';
-        return;
-    }
-
-    subjectsList.forEach(subject => {
-        const subjectCard = document.createElement('div');
-        subjectCard.className = 'subject-card';
-        subjectCard.innerHTML = `
-            <div class="subject-info">
-                <h4>${escapeHtml(subject.subject_name)}</h4>
-                <p><strong>Code:</strong> ${escapeHtml(subject.subject_code)} | <strong>Semester:</strong> ${subject.semester} | <strong>Dept:</strong> ${escapeHtml(subject.department)}</p>
-            </div>
-            <button class="btn btn-danger btn-sm" onclick="deleteSubject(${subject.id}, '${escapeHtml(subject.subject_name).replace(/'/g, "\\'")}')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                Delete
-            </button>
-        `;
-        container.appendChild(subjectCard);
-    });
-}
-
-async function handleAddSubject(e) {
-    e.preventDefault();
-
-    const subjectCode = document.getElementById('new-subject-code').value.trim();
-    const subjectName = document.getElementById('new-subject-name').value.trim();
-    const semester = parseInt(document.getElementById('new-subject-semester').value);
-    const department = document.getElementById('new-subject-department').value.trim();
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/admin/subjects`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Session-Token': adminSessionToken
-            },
-            body: JSON.stringify({
-                subject_code: subjectCode,
-                subject_name: subjectName,
-                semester: semester,
-                department: department
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showToast('Subject added successfully!', 'success');
-            e.target.reset();
-            await loadSubjects();
-            await loadSubjectsForManagement();
-        } else {
-            throw new Error(data.error || 'Failed to add subject');
-        }
-    } catch (error) {
-        console.error('Error adding subject:', error);
-        showToast('Failed to add subject: ' + error.message, 'error');
-    }
-}
-
-async function deleteSubject(subjectId, subjectName) {
-    if (!confirm(`Are you sure you want to delete "${subjectName}"?\n\nThis will also delete all related materials, syllabus, and questions!`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/admin/subjects/${subjectId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-Session-Token': adminSessionToken
-            }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showToast('Subject deleted successfully', 'success');
-            await loadSubjects();
-            await loadSubjectsForManagement();
-        } else {
-            throw new Error(data.error || 'Failed to delete subject');
-        }
-    } catch (error) {
-        console.error('Error deleting subject:', error);
-        showToast('Failed to delete subject: ' + error.message, 'error');
-    }
-}
-
-// Header Scroll Behavior
-function setupHeaderScrollBehavior() {
-    const header = document.querySelector('.header');
-    let lastScrollTop = 0;
-    let scrollThreshold = 100; // Minimum scroll distance before hiding
-
-    window.addEventListener('scroll', () => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-        // Only apply behavior if scrolled past threshold
-        if (scrollTop > scrollThreshold) {
-            if (scrollTop > lastScrollTop) {
-                // Scrolling down - hide header
-                header.classList.add('header-hidden');
-            } else {
-                // Scrolling up - show header
-                header.classList.remove('header-hidden');
-            }
-        } else {
-            // At top of page - always show header
-            header.classList.remove('header-hidden');
-        }
-
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-    }, { passive: true });
-}
-

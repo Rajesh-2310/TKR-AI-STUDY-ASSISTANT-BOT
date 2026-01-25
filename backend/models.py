@@ -146,39 +146,60 @@ class ImportantQuestion:
         return db.execute_query(query, (subject_id, question, answer, question_type, difficulty, unit_number), fetch=False)
     
     @staticmethod
-    def get_by_subject(subject_id, question_type=None):
+    def get_by_subject(subject_id, question_type=None, unit_number=None):
         """Get important questions by subject"""
         db = get_db()
-        if question_type:
-            query = """
-                SELECT iq.*, s.subject_name, s.subject_code
-                FROM important_questions iq
-                JOIN subjects s ON iq.subject_id = s.id
-                WHERE iq.subject_id = %s AND iq.question_type = %s
-                ORDER BY iq.unit_number, iq.difficulty
-            """
-            return db.execute_query(query, (subject_id, question_type))
-        else:
-            query = """
-                SELECT iq.*, s.subject_name, s.subject_code
-                FROM important_questions iq
-                JOIN subjects s ON iq.subject_id = s.id
-                WHERE iq.subject_id = %s
-                ORDER BY iq.unit_number, iq.difficulty
-            """
-            return db.execute_query(query, (subject_id,))
-    
-    @staticmethod
-    def get_all():
-        """Get all important questions"""
-        db = get_db()
-        query = """
+        
+        # Build query based on filters
+        base_query = """
             SELECT iq.*, s.subject_name, s.subject_code
             FROM important_questions iq
             JOIN subjects s ON iq.subject_id = s.id
-            ORDER BY s.subject_name, iq.unit_number
+            WHERE iq.subject_id = %s
         """
-        return db.execute_query(query)
+        
+        params = [subject_id]
+        
+        if question_type:
+            base_query += " AND iq.question_type = %s"
+            params.append(question_type)
+        
+        if unit_number:
+            base_query += " AND iq.unit_number = %s"
+            params.append(unit_number)
+        
+        base_query += " ORDER BY iq.unit_number, iq.difficulty"
+        
+        return db.execute_query(base_query, tuple(params))
+    
+    @staticmethod
+    def get_all(question_type=None, unit_number=None):
+        """Get all important questions"""
+        db = get_db()
+        
+        base_query = """
+            SELECT iq.*, s.subject_name, s.subject_code
+            FROM important_questions iq
+            JOIN subjects s ON iq.subject_id = s.id
+        """
+        
+        params = []
+        conditions = []
+        
+        if question_type:
+            conditions.append("iq.question_type = %s")
+            params.append(question_type)
+        
+        if unit_number:
+            conditions.append("iq.unit_number = %s")
+            params.append(unit_number)
+        
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+        
+        base_query += " ORDER BY s.subject_name, iq.unit_number"
+        
+        return db.execute_query(base_query, tuple(params) if params else ())
 
 
 class ChatHistory:

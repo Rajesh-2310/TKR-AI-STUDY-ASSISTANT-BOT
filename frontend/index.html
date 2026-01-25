@@ -62,6 +62,13 @@
                     </svg>
                     Upload
                 </button>
+                <button class="nav-tab" data-tab="manage-subjects" id="manage-subjects-tab-btn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    Manage Subjects
+                </button>
             </nav>
             <div class="admin-controls">
                 <button class="admin-btn" id="admin-btn">
@@ -193,6 +200,14 @@
                         <option value="long">Long Answer</option>
                         <option value="numerical">Numerical</option>
                         <option value="mcq">MCQ</option>
+                    </select>
+                    <select id="questions-unit-filter" class="type-select">
+                        <option value="">All Units</option>
+                        <option value="1">Unit 1</option>
+                        <option value="2">Unit 2</option>
+                        <option value="3">Unit 3</option>
+                        <option value="4">Unit 4</option>
+                        <option value="5">Unit 5</option>
                     </select>
                 </div>
             </div>
@@ -379,6 +394,59 @@
                             Add Question
                         </button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Subjects Tab -->
+        <div class="tab-content" id="manage-subjects-tab">
+            <div class="upload-container">
+                <h2>Manage Subjects</h2>
+                <p class="upload-description">Add or remove subjects from the system</p>
+
+                <!-- Add Subject Form -->
+                <div class="form-section">
+                    <h3>Add New Subject</h3>
+                    <form id="add-subject-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="new-subject-code">Subject Code *</label>
+                            <input type="text" id="new-subject-code" placeholder="e.g., CS101" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new-subject-name">Subject Name *</label>
+                            <input type="text" id="new-subject-name" placeholder="e.g., Data Structures" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new-subject-semester">Semester *</label>
+                            <input type="number" id="new-subject-semester" placeholder="e.g., 3" min="1" max="8"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new-subject-department">Department *</label>
+                            <input type="text" id="new-subject-department" placeholder="e.g., Computer Science"
+                                required>
+                        </div>
+
+                        <button type="submit" class="submit-button">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Subject
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Subjects List -->
+                <div class="form-section" style="margin-top: 2rem;">
+                    <h3>Existing Subjects</h3>
+                    <div id="subjects-list" class="subjects-list">
+                        <!-- Subjects will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>

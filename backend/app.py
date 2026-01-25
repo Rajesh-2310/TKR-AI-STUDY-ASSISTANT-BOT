@@ -69,9 +69,10 @@ def get_subjects():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/subjects', methods=['POST'])
+@app.route('/api/admin/subjects', methods=['POST'])
+@require_admin
 def create_subject():
-    """Create new subject"""
+    """Create new subject (admin only)"""
     try:
         data = request.json
         subject_id = Subject.create(
@@ -253,11 +254,12 @@ def get_important_questions():
     try:
         subject_id = request.args.get('subject_id', type=int)
         question_type = request.args.get('type')
+        unit_number = request.args.get('unit_number', type=int)
         
         if subject_id:
-            questions = ImportantQuestion.get_by_subject(subject_id, question_type)
+            questions = ImportantQuestion.get_by_subject(subject_id, question_type, unit_number)
         else:
-            questions = ImportantQuestion.get_all()
+            questions = ImportantQuestion.get_all(question_type, unit_number)
         
         return jsonify({'success': True, 'questions': questions})
     except Exception as e:
@@ -674,6 +676,43 @@ def delete_question(question_id):
         
     except Exception as e:
         logger.error(f"Error deleting question: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/subjects/<int:subject_id>', methods=['DELETE'])
+@require_admin
+def delete_subject(subject_id):
+    """Delete a subject (admin only)"""
+    try:
+        db = get_db()
+        
+        # Check if subject exists
+        subject = db.execute_query(
+            "SELECT id, subject_name FROM subjects WHERE id = %s",
+            (subject_id,)
+        )
+        
+        if not subject or len(subject) == 0:
+            return jsonify({'success': False, 'error': 'Subject not found'}), 404
+        
+        # Delete from database (cascades to related materials, syllabus, questions)
+        try:
+            db.execute_query(
+                "DELETE FROM subjects WHERE id = %s",
+                (subject_id,),
+                fetch=False
+            )
+        except Exception as db_error:
+            logger.error(f"Database error deleting subject {subject_id}: {db_error}")
+            return jsonify({'success': False, 'error': f'Database error: {str(db_error)}'}), 500
+        
+        logger.info(f"Subject {subject_id} deleted by admin {request.admin_email}")
+        return jsonify({'success': True, 'message': 'Subject deleted successfully'}), 200
+        
+    except Exception as e:
+        logger.error(f"Error deleting subject: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
