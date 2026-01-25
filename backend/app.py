@@ -46,6 +46,37 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 
+def require_admin(f):
+    """Decorator to require admin authentication"""
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Allow OPTIONS requests without authentication (CORS preflight)
+        if request.method == 'OPTIONS':
+            return f(*args, **kwargs)
+        
+        # Get session token from header
+        session_token = request.headers.get('X-Session-Token')
+        
+        if not session_token:
+            return jsonify({'success': False, 'error': 'No session token provided'}), 401
+        
+        # Verify session
+        result = AuthService.verify_session(session_token)
+        
+        if not result['success']:
+            return jsonify({'success': False, 'error': 'Invalid or expired session'}), 401
+        
+        # Add admin info to request
+        request.admin_id = result['admin_id']
+        request.admin_email = result['email']
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -69,10 +100,13 @@ def get_subjects():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/admin/subjects', methods=['POST'])
+@app.route('/api/admin/subjects', methods=['POST', 'OPTIONS'])
 @require_admin
 def create_subject():
     """Create new subject (admin only)"""
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         data = request.json
         subject_id = Subject.create(
@@ -545,32 +579,6 @@ def check_auth():
 
 
 # ==================== ADMIN-ONLY RESOURCE MANAGEMENT ====================
-
-def require_admin(f):
-    """Decorator to require admin authentication"""
-    from functools import wraps
-    
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Get session token from header
-        session_token = request.headers.get('X-Session-Token')
-        
-        if not session_token:
-            return jsonify({'success': False, 'error': 'Authentication required'}), 401
-        
-        # Verify session
-        result = AuthService.verify_session(session_token)
-        
-        if not result['success']:
-            return jsonify({'success': False, 'error': 'Invalid or expired session'}), 401
-        
-        # Add admin info to request
-        request.admin_id = result['admin_id']
-        request.admin_email = result['email']
-        
-        return f(*args, **kwargs)
-    
-    return decorated_function
 
 
 @app.route('/api/admin/materials/<int:material_id>', methods=['DELETE'])
